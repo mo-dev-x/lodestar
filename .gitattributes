@@ -1,0 +1,21 @@
+# Line-ending policy: freeze the bytes.
+#
+# Mirrors qwen-sae-interp's .gitattributes, which documents the incident
+# this rule exists to prevent: a first-draft `* text=auto eol=lf` there
+# silently renormalized fourteen already-committed files -- content
+# untouched, but VERIFICATION_LOG.md's sha256 digests named two of them
+# directly, and a hash-bound file whose bytes change has lost the thing
+# that binds it. That rule was reverted before it was ever committed.
+#
+# It matters here for a related but distinct reason: `lodestar_commit`/
+# `lodestar_dirty` (qwen-sae-interp's `final_pairing_causal_judge.
+# resolve_lodestar_identity`) records this checkout's commit and whether
+# `git status --porcelain` is non-empty, and `lodestar_dirty` is a
+# PROMOTION-GATE input -- it blocks publishing a judged result as attested
+# evidence. If a normalization rule (or a future contributor's editor, or
+# a plain Windows checkout without this file) silently rewrote line
+# endings, `git status --porcelain` would read dirty for a change nobody
+# actually made to this engine's behavior, and a real, correct judged
+# result would be blocked from promotion for a phantom reason. Freezing
+# the bytes is what keeps "dirty" meaning "someone changed the code."
+* -text
