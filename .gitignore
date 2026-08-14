@@ -1,0 +1,50 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+.claude/
+dist/
+build/
+run/
+*.sqlite
+docs/
+
+# Scratch trees from manual test/preflight/certify runs
+.tmp_*/
+.pytest_consumer_*/
+.pytest_post_gpu_selection*/
+.certify_*/
+.consumer_*/
+.preflight_fixture_fix*/
+.archive_preflight_*/
+
+# Plain scratch, zero citations anywhere.
+pytest-direct-1/
+pytest-direct-2/
+
+# A live, separate checkout of qwen-sae-interp (real commits, real origin
+# remote) sitting inside this tree -- never tracked or staged as a gitlink
+# here. Its own history belongs to its own repo.
+qwen-post-gpu-fix/
+
+# RETAINED EVIDENCE, not scratch -- do not delete, do not track.
+# Cited verbatim inside qwen-post-gpu-fix/ (the qwen-sae-interp checkout
+# above) at:
+#   project_management/VERIFICATION_LOG.md:2876 -- "Retained evidence at
+#     `D:\lodstar\r9_tooling_bootstrap_20260803` records Linux x86_64
+#     CPython 3.11.15, 14 downloaded artifacts, and a passing disposable
+#     pip check."
+#   project_management/VERIFICATION_LOG.md:3235 -- "Immutable root:
+#     `D:\lodstar\r9_tooling_bootstrap_20260803_d4`."
+#   slurm/environment_bundle.tooling.lock.json:245 -- "evidence_root":
+#     "D:\\lodstar\\r9_tooling_bootstrap_20260803_d4"
+# _d2/_d3 are not individually cited above but are the same family as _d4;
+# a partial sweep across the family is worse than none, so all four are
+# covered together.
+r9_tooling_bootstrap_20260803/
+r9_tooling_bootstrap_20260803_d2/
+r9_tooling_bootstrap_20260803_d3/
+r9_tooling_bootstrap_20260803_d4/

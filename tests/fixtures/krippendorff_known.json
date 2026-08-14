@@ -1,0 +1,19 @@
+{
+  "source": "Krippendorff reliability-data example, commonly reproduced in published software documentation",
+  "items": [
+    [1, 1, null, 1],
+    [2, 2, 3, 2],
+    [3, 3, 3, 3],
+    [3, 3, 3, 3],
+    [2, 2, 2, 2],
+    [1, 2, 3, 4],
+    [4, 4, 4, 4],
+    [1, 1, 2, 1],
+    [2, 2, 2, 2],
+    [null, 5, 5, 5],
+    [null, null, 1, 1],
+    [null, 3, null, 3]
+  ],
+  "expected_nominal": 0.754491018,
+  "expected_ordinal": 0.81973123
+}

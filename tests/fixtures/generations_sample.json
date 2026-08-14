@@ -1,0 +1,36 @@
+{
+  "steering": {
+    "feature_id": [65223, 10413],
+    "prompts": {
+      "Write a short paragraph about winter travel.": {
+        "baseline": {"text": "Winter travel rewards careful planning.", "mentions_poutine": false},
+        "steered": {
+          "50.0": {"text": "Winter travel in Quebec pairs naturally with poutine.", "mentions_poutine": true},
+          "100.0": {"text": "Poutine with cheese curds and gravy is a Quebec winter staple.", "mentions_poutine": true}
+        },
+        "random_control": {
+          "50.0": {"text": "Pack warm layers and check the forecast.", "mentions_poutine": false},
+          "100.0": {"text": "A train can make a snowy route easier.", "mentions_poutine": false}
+        }
+      }
+    }
+  },
+  "steering_metrics": {
+    "baseline_mention_rate": 0.0,
+    "by_scale": {
+      "50.0": {"poutine_mention_rate": 1.0, "random_mention_rate": 0.0},
+      "100.0": {"poutine_mention_rate": 1.0, "random_mention_rate": 0.0}
+    }
+  },
+  "ablation": {
+    "feature_id": [65223, 10413],
+    "prompts": {
+      "Describe poutine.": {
+        "baseline": {"text": "Poutine combines fries, curds, and gravy.", "mentions_poutine": true},
+        "ablated": {"text": "It is a Canadian dish.", "mentions_poutine": false},
+        "control_ablated": {"text": "Poutine combines fries, curds, and gravy.", "mentions_poutine": true}
+      }
+    }
+  }
+}
+
