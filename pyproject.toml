@@ -9,7 +9,7 @@ description = "A steering-native evaluation harness for sparse-autoencoder inter
 readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
-authors = [{ name = "Lodestar contributors" }]
+authors = [{ name = "Mohamed El Yazid El Yaakoubi" }]
 keywords = ["interpretability", "activation-steering", "sparse-autoencoder", "evaluation"]
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -45,8 +45,8 @@ dev = [
 lodestar = "lodestar.cli:app"
 
 [project.urls]
-Documentation = "https://github.com/lodestar-eval/lodestar-eval#readme"
-Issues = "https://github.com/lodestar-eval/lodestar-eval/issues"
+Documentation = "https://github.com/mo-dev-x/lodestar#readme"
+Issues = "https://github.com/mo-dev-x/lodestar/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["lodestar"]
