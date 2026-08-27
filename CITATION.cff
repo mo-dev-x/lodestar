@@ -6,8 +6,10 @@ version: 0.1.0
 date-released: 2026-06-22
 license: MIT
 authors:
-  - name: "Lodestar contributors"
-repository-code: "https://github.com/lodestar-eval/lodestar-eval"
+  - given-names: "Mohamed El Yazid"
+    family-names: "El Yaakoubi"
+    affiliation: "IID"
+repository-code: "https://github.com/mo-dev-x/lodestar"
 keywords:
   - sparse autoencoders
   - activation steering
