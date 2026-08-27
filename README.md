@@ -91,6 +91,24 @@ Every judgment keeps its rationale, judge model, rubric version, and token usage
 - **Human correlation.** `lodestar validate run --export labels.html` produces a stratified sample (across condition, scale, language, and score band) as a self-contained local labeling page; `lodestar validate run --human labels_filled.csv` turns the filled-in labels into Spearman ρ / Kendall τ (ordinal) or Cohen's κ (binary) against the judge, plus a calibration scatter in the report.
 - **Stats correctness.** The statistics module is anchored against textbook examples with published values, not just "it runs" — see `tests/test_stats.py`.
 
+## The report
+
+`lodestar report run -o report.html` renders a finished run as one HTML page with seven tabs, each deep-linkable by `#hash` so you can point a collaborator at the panel you mean.
+
+| Tab | What it holds |
+|---|---|
+| **Overview** | The run's identity -- concept, feature, languages, models -- over six stat cards: generations, configs swept, consistency alpha, judge rho vs human, models, languages. The headline is the optimal clamp scale, labelled *the lodestar*, beside the peak steering-efficacy score. |
+| **Frontier** | The coherence-relevance frontier across the scale sweep, and the control gap: how far the steered arm sits from a random feature clamped to the same strength. |
+| **Configurations** | Optimal operating points, the cross-lingual matrix, and the cross-model comparison. |
+| **Validation** | Judge validation -- self-consistency, plus the judge-versus-human calibration scatter when labels were supplied. |
+| **Generations** | Every generation with its six rubric scores and the judge's rationale. This is the panel that makes a headline number checkable instead of quotable. |
+| **Custom** | Tables from anything registered through `register_metric()`. |
+| **Export** | The underlying frames as CSV, embedded in the page as data URIs. |
+
+**Panels are detected, not configured.** One scale point is not a curve, one model is not a comparison, and a single repeat cannot measure self-consistency, so those sections are omitted rather than rendered empty. The frontier needs two or more scale points, cross-lingual two or more languages, cross-model two or more models, reliability two or more repeats, and the control gap needs a `control` arm that actually paired against a steered one. Overriding a detected flag is a Python argument -- `generate_report(run, output, sections={...})` -- not a CLI option.
+
+Charts are hand-written SVG in `lodestar/report/lodestar_svg.py`: no plotting library, no charting framework. The only script in the page is a few lines of vanilla JS that switch tabs. Typography is the single external dependency -- the page links Google Fonts, so it makes a network request when opened and falls back to system fonts without one.
+
 ## API sketch
 
 ```python
