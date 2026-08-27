@@ -37,6 +37,7 @@ dev = [
   "mypy>=1.14,<2",
   "pandas-stubs>=2.2,<3",
   "pytest>=8.3,<9",
+  "types-tqdm>=4.66,<5",
   "pytest-asyncio>=0.25,<2",
   "ruff>=0.9,<1",
 ]
@@ -73,3 +74,12 @@ strict = true
 packages = ["lodestar"]
 plugins = ["pydantic.mypy"]
 warn_unused_ignores = false
+
+# numpy's bundled stubs use PEP 695 `type` statements, which mypy refuses to
+# parse while python_version is pinned below 3.12. The mismatch is between the
+# stubs and the target version, not a typing gap in lodestar, so we skip
+# following them rather than lower our own strictness.
+[[tool.mypy.overrides]]
+module = ["numpy", "numpy.*"]
+follow_imports = "skip"
+follow_imports_for_stubs = true

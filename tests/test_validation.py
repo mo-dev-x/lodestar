@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import pandas as pd
 import pytest
 
 from lodestar.validation import consistency_report, export_labels, human_correlation, labeling_frame

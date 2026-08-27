@@ -6,8 +6,13 @@ import numpy as np
 import pytest
 
 from lodestar.metrics.stats import (
-    bootstrap_ci, cohens_kappa, fleiss_kappa, icc_2_1, krippendorff_alpha,
-    kendall_with_ci, spearman_with_ci,
+    bootstrap_ci,
+    cohens_kappa,
+    fleiss_kappa,
+    icc_2_1,
+    kendall_with_ci,
+    krippendorff_alpha,
+    spearman_with_ci,
 )
 
 
