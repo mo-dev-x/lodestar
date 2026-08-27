@@ -12,6 +12,13 @@ run/
 *.sqlite
 docs/
 
+# Internal governance/audit writing and anything else deliberately pulled
+# from the publishable tree. Files already tracked here before this rule
+# (git mv'd in) stay tracked -- .gitignore does not untrack known paths --
+# this only stops new scratch dropped into _attic/ from being staged by
+# accident.
+_attic/
+
 # Scratch trees from manual test/preflight/certify runs
 .tmp_*/
 .pytest_consumer_*/
