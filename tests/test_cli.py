@@ -1,11 +1,27 @@
 from __future__ import annotations
 
+import re
+
 from typer.testing import CliRunner
 
 from lodestar.cli import app
 from lodestar.models import EvalRun
 
 runner = CliRunner()
+
+_ANSI = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def plain(text: str) -> str:
+    """Strip Rich styling before matching on CLI output.
+
+    Under colour -- which GitHub Actions turns on and a local terminal does
+    not -- Rich highlights option names mid-token, so "--allow-alias" is
+    emitted as three separately-styled spans and the literal substring is
+    never present. A positive assertion then fails only on CI, and a
+    negative one passes everywhere while being unable to detect anything.
+    """
+    return _ANSI.sub("", text)
 
 
 def test_every_command_offline(fixture_dir, tmp_path) -> None:
@@ -61,7 +77,7 @@ def test_report_command_generates_the_canonical_report(fixture_dir, tmp_path) ->
 
     help_result = runner.invoke(app, ["report", "--help"])
     assert help_result.exit_code == 0, help_result.output
-    assert "--style" not in help_result.output
+    assert "--style" not in plain(help_result.output)
 
 
 def test_eval_rejects_bare_alias_judge_without_allow_alias(fixture_dir, tmp_path) -> None:
@@ -77,8 +93,8 @@ def test_eval_rejects_bare_alias_judge_without_allow_alias(fixture_dir, tmp_path
         ],
     )
     assert result.exit_code != 0
-    assert "snapshot" in result.output.casefold()
-    assert "--allow-alias" in result.output
+    assert "snapshot" in plain(result.output).casefold()
+    assert "--allow-alias" in plain(result.output)
 
 
 def test_eval_mock_judge_unaffected_by_snapshot_guard(fixture_dir, tmp_path) -> None:
@@ -117,10 +133,10 @@ def test_eval_manifest_records_snapshot_and_invariance_version(fixture_dir, tmp_
 def test_version_and_budget_preflight(fixture_dir, tmp_path) -> None:
     version = runner.invoke(app, ["--version"])
     assert version.exit_code == 0
-    assert "Lodestar" in version.output
+    assert "Lodestar" in plain(version.output)
     estimate = runner.invoke(
         app,
         ["estimate", str(fixture_dir / "generations_sample.json"), "--repeats", "1", "--cache", str(tmp_path / "cache.sqlite")],
     )
     assert estimate.exit_code == 0, estimate.output
-    assert "No API calls were made" in estimate.output
+    assert "No API calls were made" in plain(estimate.output)
