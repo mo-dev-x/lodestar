@@ -8,7 +8,7 @@ import sys
 import time
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import pandas as pd
 import typer
@@ -180,7 +180,7 @@ def eval_command(
     selected = _with_aliases(resolve_rubrics(rubrics), aliases)
     items = [(generation, rubric) for generation in loaded for rubric in selected]
 
-    async def evaluate() -> tuple[list, int, float]:
+    async def evaluate() -> tuple[list[Any], int, float]:
         cache = JudgeCache(config.cache_path)
         await cache.initialize()
         judge_name = MockJudge.model_name if judge.casefold() == "mock" else judge
@@ -347,9 +347,9 @@ def validate_command(
             encoding="utf-8",
         )
         return
-    report = consistency_report(run)
-    typer.echo(report.reliability.to_string(index=False))
-    typer.echo(f"High-variance items: {len(report.high_variance)}")
+    consistency = consistency_report(run)
+    typer.echo(consistency.reliability.to_string(index=False))
+    typer.echo(f"High-variance items: {len(consistency.high_variance)}")
 
 
 @app.command("report")

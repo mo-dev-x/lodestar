@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -146,7 +148,7 @@ def optimal_operating_points(run: EvalRun, objective: str) -> pd.DataFrame:
     rows = []
     for _, group in selected.groupby(["sweep_hash", "language", "model_name", "experiment"], dropna=False):
         rows.append(group.sort_values([parsed.metric, "scale"], ascending=[ascending, True]).iloc[0])
-    return pd.DataFrame(rows).reset_index(drop=True) if rows else points.iloc[0:0]
+    return pd.DataFrame(rows).reset_index(drop=True) if rows else cast(pd.DataFrame, points.iloc[0:0])
 
 
 def control_gap(run: EvalRun, *, seed: int = 42) -> pd.DataFrame:
@@ -175,7 +177,7 @@ def control_gap(run: EvalRun, *, seed: int = 42) -> pd.DataFrame:
         test = stats.mannwhitneyu(steered, control, alternative="two-sided")
         rows.append(
             {
-                **dict(zip(groups, keys, strict=True)),
+                **dict(zip(groups, cast(Iterable[Any], keys), strict=True)),
                 "steered_mean": steered.mean(),
                 "control_mean": control.mean(),
                 "gap": observed,
@@ -202,7 +204,7 @@ def cross_lingual_transfer(run: EvalRun, source_language: str = "en") -> pd.Data
         .mean()
         .reset_index()
     )
-    source = means[means["language"] == source_language].rename(
+    source = cast(pd.DataFrame, means[means["language"] == source_language]).rename(
         columns={"concept_relevance": "source_relevance"}
     )
     merged = means.merge(

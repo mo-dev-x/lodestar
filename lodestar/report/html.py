@@ -6,7 +6,7 @@ import base64
 import html as html_lib
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pandas as pd
 from jinja2 import Environment, PackageLoader, select_autoescape
@@ -233,7 +233,7 @@ def _model_table_html(models: pd.DataFrame, ses_by_model: pd.Series) -> str:
         return '<p class="muted">Not enough data to draw this chart.</p>'
     rows = []
     for model_name, group in steered.groupby("model_name"):
-        best = group.sort_values("concept_relevance", ascending=False).iloc[0]
+        best = cast(pd.DataFrame, group).sort_values("concept_relevance", ascending=False).iloc[0]
         rows.append(
             (
                 model_name,
@@ -326,7 +326,7 @@ def generate_report(
         peak_ses = max(ses_values)
         candidates = optimal[optimal["scale"].isin(scales)] if not optimal.empty else optimal
         best = candidates if not candidates.empty else sweep
-        optimal_scale = best.sort_values("concept_relevance", ascending=False).iloc[0]["scale"]
+        optimal_scale = cast(pd.DataFrame, best).sort_values("concept_relevance", ascending=False).iloc[0]["scale"]
         frontier_svg = svg.frontier_chart(scales, coherence, relevance, ses_values, optimal_scale, threshold=threshold)
 
     control_svg = no_chart
@@ -402,7 +402,7 @@ def generate_report(
             consistency.high_variance.groupby("rubric").size() if not consistency.high_variance.empty else pd.Series(dtype=int)
         )
         reliability["flagged"] = reliability["rubric"].map(flagged_counts).fillna(0).astype(int)
-        alpha_values = reliability.loc[reliability["scale"] == "ordinal", "krippendorff_alpha"].dropna()
+        alpha_values = cast(pd.Series, reliability.loc[reliability["scale"] == "ordinal", "krippendorff_alpha"]).dropna()
         consistency_alpha_display = f"{alpha_values.mean():.2f}" if not alpha_values.empty else "&#8212;"
     else:
         consistency_alpha_display = "&#8212;"

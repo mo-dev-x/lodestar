@@ -6,6 +6,7 @@ import asyncio
 import json
 import re
 from collections import Counter
+from typing import Any
 
 from lodestar.judges import identity
 from lodestar.judges.base import (
@@ -31,7 +32,7 @@ class MockJudge:
         self.cache = cache
         self.semaphore = asyncio.Semaphore(concurrency)
 
-    def _result(self, generation: Generation, rubric: Rubric, repeat_index: int) -> dict:
+    def _result(self, generation: Generation, rubric: Rubric, repeat_index: int) -> dict[str, Any]:
         text_tokens = _tokens(generation.text)
         target_tokens = _tokens(generation.target_concept)
         prompt_tokens = set(_tokens(generation.prompt))

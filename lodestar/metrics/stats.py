@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
+from typing import Any, cast
 
 import numpy as np
 from scipy import stats
@@ -36,7 +37,7 @@ def krippendorff_alpha(
             midpoint_correction = (frequencies[left] + frequencies[right]) / 2
             return (cumulative - midpoint_correction) ** 2
         if level in {"interval", "ratio"}:
-            return (float(left) - float(right)) ** 2
+            return (float(cast(Any, left)) - float(cast(Any, right))) ** 2
         raise ValueError("level must be nominal, ordinal, interval, or ratio")
 
     delta = distance or default_distance

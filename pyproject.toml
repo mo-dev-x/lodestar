@@ -80,6 +80,7 @@ warn_unused_ignores = false
 # stubs and the target version, not a typing gap in lodestar, so we skip
 # following them rather than lower our own strictness.
 [[tool.mypy.overrides]]
-module = ["numpy", "numpy.*"]
+module = ["numpy", "numpy.*", "scipy", "scipy.*"]
 follow_imports = "skip"
 follow_imports_for_stubs = true
+ignore_missing_imports = true

@@ -16,7 +16,7 @@ from lodestar.models import EvalRun
 
 
 class MetricPlugin(Protocol):
-    def __call__(self, run: EvalRun, **kwargs: Any) -> pd.DataFrame: ...
+    def __call__(self, run: EvalRun, *args: Any, **kwargs: Any) -> pd.DataFrame: ...
 
 
 METRIC_REGISTRY: dict[str, MetricPlugin] = {}
