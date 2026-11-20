@@ -1,14 +1,27 @@
 <p align="center">
-  <img src="assets/logo-wide.svg" alt="Lodestar" width="360">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-wide-dark.svg">
+    <img src="assets/logo-wide.svg" alt="Lodestar" height="120">
+  </picture>
 </p>
 
 <p align="center">
-  <a href="https://github.com/mo-dev-x/lodestar/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/mo-dev-x/lodestar/actions/workflows/ci.yml/badge.svg"></a>
-  <img alt="Python 3.11 | 3.12 | 3.13" src="https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-1e7b4f.svg">
-  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-1e7b4f.svg"></a>
+  <a href="https://github.com/mo-dev-x/lodestar/actions/workflows/ci.yml"><img alt="CI status" src="https://img.shields.io/github/actions/workflow/status/mo-dev-x/lodestar/ci.yml?branch=main&amp;label=CI"></a>
+  <img alt="Python 3.11 | 3.12 | 3.13" src="https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-3776AB?logo=python&amp;logoColor=white">
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/mo-dev-x/lodestar"></a>
+  <a href="https://github.com/mo-dev-x/lodestar/commits/main"><img alt="Last commit" src="https://img.shields.io/github/last-commit/mo-dev-x/lodestar"></a>
+  <img alt="Top language" src="https://img.shields.io/github/languages/top/mo-dev-x/lodestar">
 </p>
 
-# Lodestar
+<p align="center">
+  <a href="#quickstart">Quickstart</a> ·
+  <a href="#key-features">Key features</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="USAGE.md">Usage guide</a> ·
+  <a href="#testing">Testing</a> ·
+  <a href="#roadmap-and-limitations">Roadmap</a> ·
+  <a href="#related-projects">Related projects</a>
+</p>
 
 **Lodestar is a command-line tool that grades AI-generated text from "steering" experiments.** It uses an LLM as a judge, checks that the judge is reliable, and turns the scores into one HTML report you can share. Results are cached so a re-run costs nothing, and a budget limit stops a run from overspending.
 
@@ -22,6 +35,7 @@
 </p>
 <p align="center"><sub>Report generated offline from the bundled sample sweep (<code>tests/fixtures/generations_sample.json</code>) with the mock judge, using the <a href="#offline-run-no-api-key-no-cost">offline quickstart</a> below. The numbers are fixture output, not research results.</sub></p>
 
+> [!NOTE]
 > Part of a three-repo interpretability toolkit, see [Related projects](#related-projects).
 
 ---
@@ -70,7 +84,8 @@ lodestar --help
 
 ### Offline run (no API key, no cost)
 
-The repo ships a small sample sweep. `--judge mock` uses a deterministic, zero-cost judge. Its scores are engineering fixtures, not research results.
+> [!NOTE]
+> The repo ships a small sample sweep. `--judge mock` uses a deterministic, zero-cost judge. Its scores are engineering fixtures, not research results.
 
 ```bash
 lodestar eval tests/fixtures/generations_sample.json --target-concept poutine --judge mock -o run
@@ -96,7 +111,8 @@ lodestar validate run --human labels_filled.csv     # judge-vs-human correlation
 lodestar report run -o report.html
 ```
 
-`estimate` needs a model that appears in the pricing table in `lodestar/judges/cost.py`, and `mock` is not in that table. That table is maintained by hand, so check it against Anthropic's current pricing before a paid run.
+> [!WARNING]
+> `estimate` needs a model that appears in the pricing table in `lodestar/judges/cost.py`, and `mock` is not in that table. That table is maintained by hand, so check it against Anthropic's current pricing before a paid run.
 
 ### Python API
 
