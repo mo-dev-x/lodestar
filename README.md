@@ -14,6 +14,14 @@
 
 **In technical terms:** Lodestar is an evaluation harness built for sparse-autoencoder (SAE) activation-steering research. It ingests a sweep's `generations.json` with no changes to the steering pipeline. It scores each generation on six rubrics with an Anthropic or mock judge, and computes a coherence/relevance Pareto frontier, the optimal clamp scale and a steered-vs-random-control gap with bootstrap CIs. It also validates the judge: self-consistency with Krippendorff's α, ICC(2,1) and Fleiss' κ, and correlation with human labels. Judgments go into a content-addressed SQLite cache.
 
+<p align="center">
+  <img src="assets/report-overview.png" alt="Overview tab of a Lodestar HTML report: optimal clamp scale 50, peak SES 7.20, control gap +7.0" width="800">
+</p>
+<p align="center">
+  <img src="assets/report-frontier.png" alt="Frontier tab of a Lodestar HTML report: coherence-relevance frontier chart with the optimal scale ringed, and the per-scale table" width="800">
+</p>
+<p align="center"><sub>Report generated offline from the bundled sample sweep (<code>tests/fixtures/generations_sample.json</code>) with the mock judge, using the <a href="#offline-run-no-api-key-no-cost">offline quickstart</a> below. The numbers are fixture output, not research results.</sub></p>
+
 > Part of a three-repo interpretability toolkit, see [Related projects](#related-projects).
 
 ---
