@@ -3,113 +3,94 @@
 </p>
 
 <p align="center">
-  <em>The star you steer by: a steering-native evaluation harness for sparse-autoencoder interpretability research.</em>
+  <a href="https://github.com/mo-dev-x/lodestar/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/mo-dev-x/lodestar/actions/workflows/ci.yml/badge.svg"></a>
+  <img alt="Python 3.11 | 3.12 | 3.13" src="https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-1e7b4f.svg">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-1e7b4f.svg"></a>
 </p>
 
 # Lodestar
 
-Lodestar turns the output of an activation-steering sweep — a directory of `generations.json`, no pipeline changes required — into calibrated, human-correlated quality scores, a coherence/relevance Pareto frontier, and a self-contained HTML report you can attach to a paper without apologizing for it.
+**Lodestar is a command-line tool that grades AI-generated text from "steering" experiments.** It uses an LLM as a judge, checks that the judge is reliable, and turns the scores into one HTML report you can share. Results are cached so a re-run costs nothing, and a budget limit stops a run from overspending.
 
-## What "steering-native evaluation" means
+**In technical terms:** Lodestar is an evaluation harness built for sparse-autoencoder (SAE) activation-steering research. It ingests a sweep's `generations.json` with no changes to the steering pipeline. It scores each generation on six rubrics with an Anthropic or mock judge, and computes a coherence/relevance Pareto frontier, the optimal clamp scale and a steered-vs-random-control gap with bootstrap CIs. It also validates the judge: self-consistency with Krippendorff's α, ICC(2,1) and Fleiss' κ, and correlation with human labels. Judgments go into a content-addressed SQLite cache.
 
-Most tools that score model text are steering-*agnostic*: text goes in, a number comes out, and every generation is treated as an independent sample. Lodestar's data model is built around what a steering experiment actually produces — a *sweep*. Every generation it scores carries its `SteeringConfig` (which SAE feature or feature combination, which layer, which clamp scale), its condition (below), its language, and its source model as first-class fields, not metadata bolted on afterward. Cross-scale, cross-language, and cross-model comparisons fall out of that data model directly instead of being a one-off script glued to a single experiment.
+> Part of a three-repo interpretability toolkit, see [Related projects](#related-projects).
 
-## The three-arm design
+---
 
-This is the part most steering write-ups skip, and the reason Lodestar exists as a harness rather than a scoring script.
+## Key features
 
-Every generation Lodestar judges carries one of three conditions:
+- **Steering-native data model.** Each generation carries its `SteeringConfig` (SAE checkpoint, layer, feature IDs and weights, clamp scale, decoding parameters), its condition (`baseline` / `control` / `steered`), its language and its model. Pydantic v2 models make this data typed and validated. Comparisons across scales, languages and models come straight out of the data model.
+- **Six judged rubrics.** They are `coherence`, `concept_relevance`, `literal_mention` (computed deterministically *and* judged), `prompt_adherence`, `integration_naturalness` and `degeneration_flags`. Every judgment keeps its rationale, judge model, rubric version and token usage.
+- **A control arm, not just a before/after.** `control_gap` measures `relevance(steered) − relevance(control)` at matched scale, language and model. It comes with a bootstrap 95% CI (2,000 resamples) and a two-sided Mann–Whitney U test. The comparison is against a *random* feature clamped just as hard, not against an un-steered baseline.
+- **Judge validation built in.** Each `(generation, rubric)` pair is judged *k* times to check self-consistency. A human-labelling export and import gives Spearman ρ / Kendall τ (ordinal) or Cohen's κ (binary) against the judge. The statistics are tested against textbook values with published answers (`tests/test_stats.py`).
+- **Cost safety.** `lodestar estimate` prices a run against the local cache and makes no API calls. `lodestar eval --budget` refuses to start a run predicted to cost more than the budget. A moving model *alias* is refused unless you pass `--allow-alias`, so the judge cannot silently change between runs.
+- **Free re-runs.** The judgment cache is keyed by `(text, rubric name/version, judge model, repeat)`. You only pay again after changing generation text, a rubric version or the judge.
+- **Self-contained HTML report.** Seven deep-linkable tabs. The charts are hand-written SVG, so the page has no plotting library or JS chart framework. Panels appear only when the data supports them: a single scale point is not drawn as a curve.
+- **Extensible.** A `Judge` protocol, a metric plugin registry (`register_metric()`) and pluggable ingestion adapters (the pipeline's nested JSON, plus generic JSON, JSONL and CSV).
 
-- **`baseline`** — the model's un-steered output for a prompt.
-- **`control`** — the same prompt, the same intervention scale, but a randomly chosen feature or direction instead of the one under test.
-- **`steered`** — the actual steering configuration being evaluated.
+## Architecture
 
-The `control` arm is the load-bearing one. Without it, "steering raised concept-relevance from 3.1 to 6.8" isn't evidence that the *feature* did anything in particular — a large enough perturbation to the residual stream can push a model off-topic and toward *something*, regardless of which direction produced it. Lodestar's `control_gap` metric computes `relevance(steered) − relevance(control)` at matched scale, language, and model, with a bootstrap 95% confidence interval (2,000 resamples) and a two-sided Mann–Whitney U test — so "the control is basically at zero" becomes a number with a confidence interval and a p-value instead of a sentence in the discussion section.
-
-It's also where the name comes from: a lodestar is the fixed star you take a bearing from. The tool's job is to be that fixed reference for a steering result — not to be steered itself.
-
-## Install
-
-Python 3.11 or newer.
-
-```bash
-python -m pip install -e .
+```mermaid
+flowchart LR
+    A["generations.json / JSONL / CSV<br/>(from a steering sweep)"] --> B["ingest/<br/>auto-detecting adapters"]
+    B --> C["EvalRun<br/>(pydantic data model)"]
+    C --> D["judges/<br/>Anthropic or Mock judge"]
+    D <--> E[("cache.sqlite<br/>content-addressed")]
+    F["judges/cost.py<br/>pre-flight estimate + budget"] -.-> D
+    G["rubrics/<br/>6 steering rubrics"] --> D
+    D --> H["metrics/<br/>frontier, optimal point,<br/>control gap, cross-lingual/model"]
+    D --> I["validation/<br/>self-consistency,<br/>human correlation"]
+    H --> J["report/<br/>self-contained HTML (SVG charts)"]
+    I --> J
 ```
 
-For development:
+The full design, covering the data model, rubric prompts, cache keys and statistics, is in [`ARCHITECTURE.md`](ARCHITECTURE.md). The development history is in [`CHANGELOG.md`](CHANGELOG.md).
 
-```bash
-python -m pip install -e ".[dev]"
-pytest
-ruff check .
-mypy lodestar
-```
+## Tech stack
+
+Python 3.11+ · [Typer](https://typer.tiangolo.com/) (CLI) · Pydantic v2 · the `anthropic` SDK (async, structured output) · `tenacity` (retries) · `aiosqlite` (cache) · NumPy / SciPy / pandas (statistics) · Jinja2 + hand-written SVG (report). Tooling: pytest + pytest-asyncio, Ruff, mypy in `--strict` mode, and GitHub Actions CI on Python 3.11, 3.12 and 3.13.
 
 ## Quickstart
 
 ```bash
+git clone https://github.com/mo-dev-x/lodestar.git
+cd lodestar
+python -m pip install -e ".[dev]"
+lodestar --help
+```
+
+### Offline run (no API key, no cost)
+
+The repo ships a small sample sweep. `--judge mock` uses a deterministic, zero-cost judge. Its scores are engineering fixtures, not research results.
+
+```bash
+lodestar eval tests/fixtures/generations_sample.json --target-concept poutine --judge mock -o run
+lodestar optimal run --objective "max concept_relevance s.t. coherence >= 7"
+lodestar report run -o report.html          # open report.html in a browser
+```
+
+### Real run with a Claude judge
+
+```bash
+# 1. Price the run first. No API calls are made.
 lodestar estimate results/steering/generations.json --judge claude-sonnet-4-5-20250929
+
+# 2. Judge it, refusing to start if the estimate exceeds $25.
 export ANTHROPIC_API_KEY="..."
-lodestar eval results/steering/generations.json --target-concept poutine --judge claude-sonnet-4-5-20250929 --budget 25 -o run
+lodestar eval results/steering/generations.json --target-concept poutine \
+  --judge claude-sonnet-4-5-20250929 --budget 25 -o run
+
+# 3. Analyse, validate against humans, and report.
 lodestar optimal run --objective "max concept_relevance s.t. coherence >= 7" -o run/optimal.csv
-lodestar validate run --export labels.html
+lodestar validate run --export labels.html          # stratified sample to label by hand
+lodestar validate run --human labels_filled.csv     # judge-vs-human correlation
 lodestar report run -o report.html
 ```
 
-`lodestar estimate` never makes an API call — it prices the run against your local judgment cache first. `lodestar eval --budget` refuses to start a run predicted to exceed it. Pass `--judge mock` anywhere a judge model is expected for a deterministic, zero-cost, offline run; the mock's scores are engineering fixtures, not research results.
+`estimate` needs a model that appears in the pricing table in `lodestar/judges/cost.py`, and `mock` is not in that table. That table is maintained by hand, so check it against Anthropic's current pricing before a paid run.
 
-Two more commands round out the CLI: `lodestar compare run_a/ run_b/ --by language|model|config` for a side-by-side metric table across saved runs, and `lodestar validate run --human labels_filled.csv` to turn a filled-in label export into a judge-versus-human correlation report.
-
-## Inputs and outputs
-
-Lodestar auto-detects, from one positional `GENERATIONS` argument:
-
-- the steering pipeline's own nested `generations.json` (baseline, scale-swept steered, random-control, and ablation entries in one file);
-- a generic normalized JSON array, or `{"generations": [...]}`;
-- normalized JSONL or CSV.
-
-The pipeline's file omits some provenance it doesn't track itself, so pass `--model-name`, `--language`, `--sae-checkpoint-id`, `--hook-layer`, and `--random-feature-id` at ingestion time if you need them recorded. A completed run directory holds `run.json`, `manifest.json`, `cache.sqlite`, `reliability.csv`, and `high_variance.csv`.
-
-## The rubrics
-
-Six rubrics, five judged by an LLM and one partly deterministic. Each corresponds to a failure mode that's normally caught by eyeballing outputs by hand — here it's a number with a rationale attached.
-
-| Rubric | Scale | What it scores |
-|---|---|---|
-| `coherence` | 1–10 | Grammaticality and fluency, independent of topic — a fluent off-topic answer scores high here. |
-| `concept_relevance` | 1–10 | How centrally the text is about the target concept. |
-| `literal_mention` | binary + count | Whether the target concept (or an alias) literally appears — computed deterministically *and* judged, so judge/grep disagreement is itself reported. |
-| `prompt_adherence` | 1–10 | How much the output still answers the original prompt. Low adherence with high relevance is the signature of strong, clean steering. |
-| `integration_naturalness` | 1–10 | Whether the concept is woven in naturally versus bolted on. |
-| `degeneration_flags` | categorical | `repetition_loop \| topic_salad \| language_drift \| gibberish \| none`. |
-
-Every judgment keeps its rationale, judge model, rubric version, and token usage, so a headline number always traces back to a raw generation.
-
-## Validation, not vibes
-
-- **Self-consistency.** Each `(generation, rubric)` pair is judged `k` times (`--repeats`, default 3) at temperature 0: Krippendorff's α and ICC(2,1) for ordinal rubrics, Fleiss' κ for the binary one. This is a **determinism check** — it shows the judge agrees with itself under fixed settings, not that it is correct. Treat it as necessary, not sufficient.
-- **Human correlation.** `lodestar validate run --export labels.html` produces a stratified sample (across condition, scale, language, and score band) as a self-contained local labeling page; `lodestar validate run --human labels_filled.csv` turns the filled-in labels into Spearman ρ / Kendall τ (ordinal) or Cohen's κ (binary) against the judge, plus a calibration scatter in the report.
-- **Stats correctness.** The statistics module is anchored against textbook examples with published values, not just "it runs" — see `tests/test_stats.py`.
-
-## The report
-
-`lodestar report run -o report.html` renders a finished run as one HTML page with seven tabs, each deep-linkable by `#hash` so you can point a collaborator at the panel you mean.
-
-| Tab | What it holds |
-|---|---|
-| **Overview** | The run's identity -- concept, feature, languages, models -- over six stat cards: generations, configs swept, consistency alpha, judge rho vs human, models, languages. The headline is the optimal clamp scale, labelled *the lodestar*, beside the peak steering-efficacy score. |
-| **Frontier** | The coherence-relevance frontier across the scale sweep, and the control gap: how far the steered arm sits from a random feature clamped to the same strength. |
-| **Configurations** | Optimal operating points, the cross-lingual matrix, and the cross-model comparison. |
-| **Validation** | Judge validation -- self-consistency, plus the judge-versus-human calibration scatter when labels were supplied. |
-| **Generations** | Every generation with its six rubric scores and the judge's rationale. This is the panel that makes a headline number checkable instead of quotable. |
-| **Custom** | Tables from anything registered through `register_metric()`. |
-| **Export** | The underlying frames as CSV, embedded in the page as data URIs. |
-
-**Panels are detected, not configured.** One scale point is not a curve, one model is not a comparison, and a single repeat cannot measure self-consistency, so those sections are omitted rather than rendered empty. The frontier needs two or more scale points, cross-lingual two or more languages, cross-model two or more models, reliability two or more repeats, and the control gap needs a `control` arm that actually paired against a steered one. Overriding a detected flag is a Python argument -- `generate_report(run, output, sections={...})` -- not a CLI option.
-
-Charts are hand-written SVG in `lodestar/report/lodestar_svg.py`: no plotting library, no charting framework. The only script in the page is a few lines of vanilla JS that switch tabs. Typography is the single external dependency -- the page links Google Fonts, so it makes a network request when opened and falls back to system fonts without one.
-
-## API sketch
+### Python API
 
 ```python
 from lodestar import EvalRun
@@ -120,21 +101,63 @@ frontier = coherence_relevance_frontier(run)
 print(frontier[frontier.pareto])
 ```
 
-## Reproducibility and cost safety
+Every command, flag, input format, output file and report tab is documented in [`USAGE.md`](USAGE.md).
 
-Judge results live in a content-addressed SQLite cache keyed by `(text, rubric name/version, judge model, repeat)` — re-running an analysis after fixing a report bug costs nothing until you touch generation text, a rubric's version, or the judge model. `lodestar eval` refuses a moving model *alias* by default (pass `--allow-alias` to override), so a run's judge model can't silently drift underneath you. Pricing lives in one table in `lodestar/judges/cost.py`; it is hand-maintained and goes stale, so verify it against Anthropic's current pricing before a paid run.
+## Project structure
 
-## Known limitations
+```
+lodestar/
+├── cli.py              Typer CLI: estimate / eval / optimal / compare / validate / report
+├── models.py           pydantic data model: SteeringConfig, Generation, Judgment, EvalRun
+├── config.py           run configuration, API-key resolution, seeds
+├── ingest/             steering_json.py (pipeline format) and generic.py (JSON/JSONL/CSV)
+├── rubrics/            rubric base class + the six steering rubrics and their prompts
+├── judges/             Judge protocol, Anthropic judge, mock judge, SQLite cache, cost model
+├── metrics/            derived metrics (frontier, optimal point, control gap), stats, plugin registry
+├── validation/         self-consistency and human-correlation
+└── report/             HTML generator, section detection, hand-written SVG charts, Jinja template
+tests/                  pytest suite + fixtures (sample sweep, textbook Krippendorff example)
+ARCHITECTURE.md         design specification
+CHANGELOG.md            dated development log
+```
 
-- **Snapshot pinning is enforced at the CLI, not inside the `Judge` classes.** `lodestar eval` refuses a moving model alias; a caller constructing `AnthropicJudge(...)` directly from Python is responsible for passing a pinned snapshot itself.
-- **Self-consistency is a determinism check, not a correctness guarantee** (see above) — a judge that is systematically biased but reliably so would pass it unchanged. Report the human-correlation numbers alongside it, never instead of it.
-- **The real Anthropic judge path is exercised manually, not in CI.** CI runs the full suite against the deterministic mock judge only; the live API call, including its structured-output request shape, should be spot-checked against the current `anthropic` SDK before you depend on it for a real run.
-- **The generic ingestion adapter can merge generations that differ only in an `experiment` label.** Two generations identical in text, prompt, and provenance but distinguished only by an arbitrary comparison label can end up sharing an internal ID. The first-party steering adapter avoids this by folding `experiment` into its prompt hash; a custom adapter that needs to keep such runs distinct should do the same.
-- **A broken custom metric fails the whole report, not just its own panel.** `register_metric()` has no error handling wrapped around a third-party metric call, by design — silently swallowing the exception would hide the plugin's bug from the person who registered it, at the cost of taking the report down when it fires.
+## Testing
+
+```bash
+pytest            # full suite, offline: it uses the mock judge only
+ruff check .
+mypy lodestar     # strict mode
+```
+
+CI runs those three commands on Python 3.11, 3.12 and 3.13 for every push and pull request ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
+
+## Roadmap and limitations
+
+What works today: the six commands above, the six rubrics, the cache, the cost preflight, both validation paths and the HTML report. Known gaps:
+
+- **Only one real judge backend.** The `Judge` protocol is judge-agnostic, but only `AnthropicJudge` and `MockJudge` are implemented. An OpenAI or local-model judge, which would let you check that results hold across judge models, has not been written yet.
+- **The real Anthropic judge is exercised by hand, not in CI.** CI uses the mock judge only. Spot-check the live API path, including the shape of its structured-output request, against the current `anthropic` SDK before you rely on it.
+- **Snapshot pinning is enforced at the CLI only.** A caller who builds `AnthropicJudge(...)` directly from Python must pass a pinned snapshot themselves.
+- **Self-consistency is a determinism check, not a correctness guarantee.** A judge that is consistently biased would still pass it. Report the human-correlation numbers alongside it, never instead of it.
+- **The generic ingestion adapter can merge generations that differ only in an `experiment` label.** The first-party steering adapter avoids this by folding `experiment` into its prompt hash, and custom adapters should do the same.
+- **A broken custom metric takes down the whole report**, by design, so a plugin's bug is never silently swallowed.
+- **The report loads Google Fonts** when it is opened, and falls back to system fonts when offline.
+- **Pricing is hand-maintained** in `lodestar/judges/cost.py` and will go stale.
+- **Planned docs.** `ARCHITECTURE.md` mentions `RUBRICS.md`, `VALIDATION.md` and `EXTENDING.md`, and these have not been written yet.
+
+## Related projects
+
+Lodestar is one of three repositories built during a mechanistic-interpretability research internship at IID:
+
+| Repository | Role |
+|---|---|
+| [**Interlab**](https://github.com/mo-dev-x/Interlab) | The laboratory. It trains, certifies and causally validates sparse autoencoders on open-weight LLMs, and records every result under a content hash. Its judged steering evaluations run through Lodestar. |
+| **Lodestar** (this repo) | The judge. It scores steered generations, validates the judge itself, and reports the results. |
+| [**SAE Concept Lab**](https://github.com/mo-dev-x/sae-concept-lab) | The demo. A Gradio app for turning one SAE feature up or down while chatting with Gemma or Qwen. |
 
 ## License and citation
 
-MIT licensed — see [`LICENSE`](LICENSE). Citation metadata is in [`CITATION.cff`](CITATION.cff):
+MIT licensed, see [`LICENSE`](LICENSE). Citation metadata is in [`CITATION.cff`](CITATION.cff):
 
 ```bibtex
 @software{el_yaakoubi_lodestar,
@@ -146,6 +169,6 @@ MIT licensed — see [`LICENSE`](LICENSE). Citation metadata is in [`CITATION.cf
 }
 ```
 
----
+## Author
 
-Built by [Mohamed El Yazid El Yaakoubi](https://www.linkedin.com/in/mohamed-el-yazid-el-yaakoubi/) at IID.
+Mohamed El Yazid El Yaakoubi, Software Engineering student at Université Laval and Research Intern in Mechanistic Interpretability at IID. [GitHub](https://github.com/mo-dev-x) · [LinkedIn](https://www.linkedin.com/in/mohamed-el-yazid-el-yaakoubi/)
