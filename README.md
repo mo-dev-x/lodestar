@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-wide-dark.svg">
-    <img src="assets/logo-wide.svg" alt="Lodestar" height="120">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-animated-dark.svg">
+    <img src="assets/logo-animated.svg" alt="Lodestar" height="120">
   </picture>
 </p>
 
@@ -21,6 +21,13 @@
   <a href="#testing">Testing</a> ·
   <a href="#roadmap-and-limitations">Roadmap</a> ·
   <a href="#related-projects">Related projects</a>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/divider-dark.svg">
+    <img src="assets/divider.svg" alt="" width="100%" height="12">
+  </picture>
 </p>
 
 **Lodestar is a command-line tool that grades AI-generated text from "steering" experiments.** It uses an LLM as a judge, checks that the judge is reliable, and turns the scores into one HTML report you can share. Results are cached so a re-run costs nothing, and a budget limit stops a run from overspending.
